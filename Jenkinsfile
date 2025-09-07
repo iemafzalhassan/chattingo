@@ -87,14 +87,13 @@ pipeline {
             steps {
                 script {
                     echo "Deploying services to Hostinger VPS..."
-                    withCredentials([sshUserPrivateKey(
-                        credentialsId: 'ssh-pass',    // Jenkins me saved SSH key ID
-                        keyFileVariable: 'SSH_KEY',
-                        usernameVariable: 'SSH_USER')]) {
-
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh-password', keyFileVariable: 'SSH_KEY')]) {
                         sh """
-                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@72.60.111.65 \\
-                            'cd /opt/chattingo && docker-compose pull && docker-compose up -d'
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} root@72.60.111.65 <<EOF
+                            cd /opt/chattingo
+                            docker-compose pull
+                            docker-compose up -d
+                            EOF
                         """
                     }
                     echo "Deployment complete."
