@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USERNAME = 'gaurav3155' // Apna Docker Hub username
+        DOCKERHUB_USERNAME = 'ergaurav3155' // Apna Docker Hub username
     }
 
     stages {
@@ -32,8 +32,10 @@ pipeline {
 
         stage('Filesystem Scan') {
             steps {
-                echo "Yeh stage abhi baaki hai."
-                sh "trivy fs --exit-code 0 --severity HIGH,CRITICAL ."
+                script {
+                    // Assuming Trivy is installed on the Jenkins agent
+                    sh "trivy fs --exit-code 0 --severity HIGH,CRITICAL ."
+                }
             }
         }
 
@@ -71,9 +73,14 @@ pipeline {
             }
         }
 
-        stage('Update Compose') {
+        stage('Update docker-compose with new image tags') {
             steps {
-                echo "Yeh stage abhi baaki hai."
+                script {
+                    echo "Updating docker-compose.yml with new image tags..."
+                    // Replace the BUILD_NUMBER placeholder in docker-compose.yml with the current Jenkins BUILD_NUMBER
+                    sh "sed -i 's/:\\${BUILD_NUMBER}/:${env.BUILD_NUMBER}/g' docker-compose.yml"
+                    echo "docker-compose.yml updated with build number ${env.BUILD_NUMBER}"
+                }
             }
         }
 
