@@ -77,7 +77,6 @@ pipeline {
             steps {
                 script {
                     echo "Updating docker-compose.yml with new image tags..."
-                    // Correctly escape BUILD_NUMBER placeholder for sed
                     sh "sed -i 's/\\\${BUILD_NUMBER}/${env.BUILD_NUMBER}/g' docker-compose.yml"
                     echo "docker-compose.yml updated with build number ${env.BUILD_NUMBER}"
                 }
@@ -88,15 +87,14 @@ pipeline {
             steps {
                 script {
                     echo "Deploying services to Hostinger VPS..."
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ssh-pass', keyFileVariable: 'SSH_KEY')]) {
-                        // Replace 'your_remote_user' and 'your_remote_host' with your actual SSH user and VPS IP/hostname.
-                        // 'StrictHostKeyChecking=no' is used for automation but consider its security implications.
+                    withCredentials([sshUserPrivateKey(
+                        credentialsId: 'ssh-pass',    // Jenkins me saved SSH key ID
+                        keyFileVariable: 'SSH_KEY',
+                        usernameVariable: 'SSH_USER')]) {
+
                         sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ssh root@72.60.111.65 <<EOF
-                            cd /opt/chattingo
-                            docker-compose pull
-                            docker-compose up -d
-                            EOF
+                            ssh -o StrictHostKeyChecking=no -i \$SSH_KEY \$SSH_USER@72.60.111.65 \\
+                            'cd /opt/chattingo && docker-compose pull && docker-compose up -d'
                         """
                     }
                     echo "Deployment complete."
