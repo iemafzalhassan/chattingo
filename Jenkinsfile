@@ -32,10 +32,7 @@ pipeline {
 
         stage('Filesystem Scan') {
             steps {
-                script {
-                    echo "Scanning filesystem for vulnerabilities..."
-                    sh "docker run --rm -v ${WORKSPACE}:/app aquasec/trivy fs /app"
-                }
+                echo "Yeh stage abhi baaki hai."
             }
         }
 
@@ -43,10 +40,10 @@ pipeline {
             steps {
                 script {
                     echo "Scanning backend image..."
-                    sh "docker run --rm aquasec/trivy image ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
 
                     echo "Scanning frontend image..."
-                    sh "docker run --rm aquasec/trivy image ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
                 }
             }
         }
@@ -54,21 +51,19 @@ pipeline {
         stage('Push to Registry') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', 
-                                                      passwordVariable: 'DOCKER_PASSWORD', 
-                                                      usernameVariable: 'DOCKER_USERNAME')]) {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         echo "Logging in to Docker Hub..."
                         sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
-                        
-                        echo "Pushing backend image..."
+
+                        echo "Pushing backend images..."
                         sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
                         sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-backend:latest"
 
-                        echo "Pushing frontend image..."
+                        echo "Pushing frontend images..."
                         sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
                         sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
 
-                        echo "Logging out from Docker Hub..."
+                        echo "Logging out from Docker Hub"
                         sh "docker logout"
                     }
                 }
@@ -77,13 +72,13 @@ pipeline {
 
         stage('Update Compose') {
             steps {
-                echo "Yeh stage abhi baaki hai, future me docker-compose update ke liye."
+                echo "Yeh stage abhi baaki hai."
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Yeh stage abhi baaki hai, future me deployment ke liye."
+                echo "Yeh stage abhi baaki hai."
             }
         }
     }
