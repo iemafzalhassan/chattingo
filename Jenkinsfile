@@ -4,28 +4,41 @@ pipeline {
     stages {
         stage('Git Clone') {
             steps {
+                // 'main' branch se code clone karega
                 git branch: 'main', url: 'https://github.com/ergaurav3155/chattingo.git'
-                // Agar repository private hai to credentials aise add karein:
+                // Agar repository private hai to credentialsId ka upyog karein
                 // git branch: 'main', credentialsId: 'github-credentials', url: 'https://github.com/ergaurav3155/chattingo.git'
             }
         }
         stage('Image Build') {
-            // Hum isko agle step mein karenge
+            steps {
+                echo "Yeh stage abhi baaki hai."
+            }
         }
         stage('Filesystem Scan') {
-            // Hum isko agle step mein karenge
+            steps {
+                echo "Yeh stage abhi baaki hai."
+            }
         }
         stage('Image Scan') {
-            // Hum isko agle step mein karenge
+            steps {
+                echo "Yeh stage abhi baaki hai."
+            }
         }
         stage('Push to Registry') {
-            // Hum isko agle step mein karenge
+            steps {
+                echo "Yeh stage abhi baaki hai."
+            }
         }
         stage('Update Compose') {
-            // Hum isko agle step mein karenge
+            steps {
+                echo "Yeh stage abhi baaki hai."
+            }
         }
         stage('Deploy') {
-            // Hum isko agle step mein karenge
+            steps {
+                echo "Yeh stage abhi baaki hai."
+            }
         }
     }
 }
