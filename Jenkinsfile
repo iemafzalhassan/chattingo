@@ -78,7 +78,7 @@ pipeline {
                 script {
                     echo "Updating docker-compose.yml with new image tags..."
                     // Replace the BUILD_NUMBER placeholder in docker-compose.yml with the current Jenkins BUILD_NUMBER
-                    sh "sed -i 's/:\\${BUILD_NUMBER}/:${env.BUILD_NUMBER}/g' docker-compose.yml"
+                    sh "sed -i 's/\\$\\{BUILD_NUMBER\\\}/${env.BUILD_NUMBER}/g' docker-compose.yml"
                     echo "docker-compose.yml updated with build number ${env.BUILD_NUMBER}"
                 }
             }
