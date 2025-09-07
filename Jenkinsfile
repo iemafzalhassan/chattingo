@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USERNAME = 'ergaurav3155' // Apna Docker Hub username
+        DOCKERHUB_USERNAME = 'gaurav3155' // Apna Docker Hub username
     }
 
     stages {
