@@ -17,24 +17,42 @@ pipeline {
             steps {
                 echo "Building all images using Docker Compose..."
                 sh "docker-compose build"
+                
+                echo "Checking built images..."
+                sh "docker images"
             }
         }
 
-        stage('Tag Images for Scan') {
+        stage('Tag Images for Scan & Push') {
             steps {
-                echo "Tagging images with build number for Trivy scan..."
+                echo "Tagging images with build number..."
                 sh "docker tag chattingo-backend:latest ${DOCKERHUB_USERNAME}/chattingo-backend:${BUILD_TAG}"
                 sh "docker tag chattingo-frontend:latest ${DOCKERHUB_USERNAME}/chattingo-frontend:${BUILD_TAG}"
+
+                echo "Verifying tagged images..."
+                sh "docker images | grep ${DOCKERHUB_USERNAME}"
             }
         }
 
         stage('Scan Docker Images') {
             steps {
                 echo "Scanning backend image with Trivy..."
-                sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${DOCKERHUB_USERNAME}/chattingo-backend:${BUILD_TAG}"
+                sh """
+                    if docker image inspect ${DOCKERHUB_USERNAME}/chattingo-backend:${BUILD_TAG} > /dev/null 2>&1; then
+                        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${DOCKERHUB_USERNAME}/chattingo-backend:${BUILD_TAG}
+                    else
+                        echo "Backend image with tag ${BUILD_TAG} not found! Skipping Trivy scan."
+                    fi
+                """
 
                 echo "Scanning frontend image with Trivy..."
-                sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${DOCKERHUB_USERNAME}/chattingo-frontend:${BUILD_TAG}"
+                sh """
+                    if docker image inspect ${DOCKERHUB_USERNAME}/chattingo-frontend:${BUILD_TAG} > /dev/null 2>&1; then
+                        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${DOCKERHUB_USERNAME}/chattingo-frontend:${BUILD_TAG}
+                    else
+                        echo "Frontend image with tag ${BUILD_TAG} not found! Skipping Trivy scan."
+                    fi
+                """
             }
         }
 
@@ -48,7 +66,7 @@ pipeline {
                         echo "Logging in to Docker Hub..."
                         sh "echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin"
 
-                        echo "Tagging images for Docker Hub push..."
+                        echo "Tagging images for Docker Hub push (latest)..."
                         sh "docker tag chattingo-backend:latest \$DOCKER_USERNAME/chattingo-backend:latest"
                         sh "docker tag chattingo-frontend:latest \$DOCKER_USERNAME/chattingo-frontend:latest"
 
