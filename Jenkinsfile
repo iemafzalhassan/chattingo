@@ -2,32 +2,40 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USERNAME = 'ergaurav3155' // Tumhara Docker Hub username
+        DOCKERHUB_USERNAME = 'ergaurav3155' // Docker Hub username
+        IMAGE_BACKEND = "chattingo-backend"
+        IMAGE_FRONTEND = "chattingo-frontend"
     }
 
     stages {
+
         stage('Git Clone') {
             steps {
+                echo "Cloning repo..."
                 git branch: 'main', url: 'https://github.com/ergaurav3155/chattingo.git'
+            }
+        }
+
+        stage('Clean Old Images') {
+            steps {
+                echo "Removing old local Docker images if exist..."
+                sh """
+                    docker rmi -f ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:latest || true
+                    docker rmi -f ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:${BUILD_NUMBER} || true
+                    docker rmi -f ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:latest || true
+                    docker rmi -f ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:${BUILD_NUMBER} || true
+                """
             }
         }
 
         stage('Build Images') {
             steps {
                 script {
-                    // Backend tags
-                    def backendTag = "${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
-                    def backendTagLatest = "${env.DOCKERHUB_USERNAME}/chattingo-backend:latest"
-
                     echo "Building backend image..."
-                    sh "docker build -t ${backendTag} -t ${backendTagLatest} ./backend"
-
-                    // Frontend tags
-                    def frontendTag = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
-                    def frontendTagLatest = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
+                    sh "docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:${BUILD_NUMBER} -t ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:latest ./backend"
 
                     echo "Building frontend image..."
-                    sh "docker build -t ${frontendTag} -t ${frontendTagLatest} ./frontend"
+                    sh "docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:${BUILD_NUMBER} -t ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:latest ./frontend"
                 }
             }
         }
@@ -35,11 +43,11 @@ pipeline {
         stage('Scan Images') {
             steps {
                 script {
-                    echo "Scanning backend image..."
-                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
+                    echo "Scanning backend image with Trivy..."
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:${BUILD_NUMBER}"
 
-                    echo "Scanning frontend image..."
-                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
+                    echo "Scanning frontend image with Trivy..."
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:${BUILD_NUMBER}"
                 }
             }
         }
@@ -49,17 +57,17 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         echo "Logging in to Docker Hub..."
-                        sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
+                        sh "echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin"
 
                         echo "Pushing backend images..."
-                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
-                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-backend:latest"
+                        sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:${BUILD_NUMBER}"
+                        sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:latest"
 
                         echo "Pushing frontend images..."
-                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
-                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
+                        sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:${BUILD_NUMBER}"
+                        sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:latest"
 
-                        echo "Logging out from Docker Hub..."
+                        echo "Logout from Docker Hub..."
                         sh "docker logout"
                     }
                 }
@@ -68,14 +76,23 @@ pipeline {
 
         stage('Update Compose') {
             steps {
-                echo "Yeh stage abhi baaki hai."
+                echo "Update Docker Compose stage pending..."
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Yeh stage abhi baaki hai."
+                echo "Deploy stage pending..."
             }
+        }
+    }
+
+    post {
+        failure {
+            echo "Pipeline failed! Check previous stages for errors."
+        }
+        success {
+            echo "Pipeline completed successfully!"
         }
     }
 }
