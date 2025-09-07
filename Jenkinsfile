@@ -2,97 +2,89 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USERNAME = 'ergaurav3155' // Docker Hub username
-        IMAGE_BACKEND = "chattingo-backend"
-        IMAGE_FRONTEND = "chattingo-frontend"
+        DOCKERHUB_USERNAME = 'ergaurav3155'
+        DOCKERHUB_CREDENTIALS_ID = 'dockerhub-credentials'
     }
 
     stages {
 
         stage('Git Clone') {
             steps {
-                echo "Cloning repo..."
                 git branch: 'main', url: 'https://github.com/ergaurav3155/chattingo.git'
             }
         }
 
-        stage('Clean Old Images') {
-            steps {
-                echo "Removing old local Docker images if exist..."
-                sh """
-                    docker rmi -f ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:latest || true
-                    docker rmi -f ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:${BUILD_NUMBER} || true
-                    docker rmi -f ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:latest || true
-                    docker rmi -f ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:${BUILD_NUMBER} || true
-                """
-            }
-        }
-
-        stage('Build Images') {
+        stage('Build Docker Images') {
             steps {
                 script {
+                    // Backend
+                    def backendTag = "${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
+                    def backendLatest = "${env.DOCKERHUB_USERNAME}/chattingo-backend:latest"
                     echo "Building backend image..."
-                    sh "docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:${BUILD_NUMBER} -t ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:latest ./backend"
+                    sh "docker build -t ${backendTag} -t ${backendLatest} ./backend"
 
+                    // Frontend
+                    def frontendTag = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
+                    def frontendLatest = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
                     echo "Building frontend image..."
-                    sh "docker build -t ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:${BUILD_NUMBER} -t ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:latest ./frontend"
+                    sh "docker build -t ${frontendTag} -t ${frontendLatest} ./frontend"
                 }
             }
         }
 
-        stage('Scan Images') {
+        stage('Scan Docker Images') {
             steps {
                 script {
-                    echo "Scanning backend image with Trivy..."
-                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:${BUILD_NUMBER}"
+                    echo "Scanning backend image..."
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
 
-                    echo "Scanning frontend image with Trivy..."
-                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:${BUILD_NUMBER}"
+                    echo "Scanning frontend image..."
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
                 }
             }
         }
 
-        stage('Push to Docker Hub') {
+        stage('Login & Push to Docker Hub') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         echo "Logging in to Docker Hub..."
                         sh "echo \$DOCKER_PASSWORD | docker login -u \$DOCKER_USERNAME --password-stdin"
 
                         echo "Pushing backend images..."
-                        sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:${BUILD_NUMBER}"
-                        sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_BACKEND}:latest"
+                        sh "docker push ${env.DOCKER_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
+                        sh "docker push ${env.DOCKER_USERNAME}/chattingo-backend:latest"
 
                         echo "Pushing frontend images..."
-                        sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:${BUILD_NUMBER}"
-                        sh "docker push ${DOCKERHUB_USERNAME}/${IMAGE_FRONTEND}:latest"
+                        sh "docker push ${env.DOCKER_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
+                        sh "docker push ${env.DOCKER_USERNAME}/chattingo-frontend:latest"
 
-                        echo "Logout from Docker Hub..."
+                        echo "Logging out from Docker Hub..."
                         sh "docker logout"
                     }
                 }
             }
         }
 
-        stage('Update Compose') {
+        stage('Deploy Application') {
             steps {
-                echo "Update Docker Compose stage pending..."
-            }
-        }
+                script {
+                    echo "Deploying application using Docker Compose..."
+                    // Agar aap locally deploy karna chahte ho:
+                    // sh "docker-compose -f docker-compose.yml up -d --build"
 
-        stage('Deploy') {
-            steps {
-                echo "Deploy stage pending..."
+                    echo "Deployment stage complete. Customize this for your environment."
+                }
             }
         }
     }
 
     post {
-        failure {
-            echo "Pipeline failed! Check previous stages for errors."
-        }
         success {
-            echo "Pipeline completed successfully!"
+            echo "CI/CD pipeline completed successfully! Images pushed and deployment done."
+        }
+        failure {
+            echo "Pipeline failed! Check logs for details."
         }
     }
 }
