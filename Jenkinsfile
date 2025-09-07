@@ -33,6 +33,7 @@ pipeline {
         stage('Filesystem Scan') {
             steps {
                 echo "Yeh stage abhi baaki hai."
+                sh "trivy fs --exit-code 0 --severity HIGH,CRITICAL ."
             }
         }
 
