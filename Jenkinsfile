@@ -92,7 +92,7 @@ pipeline {
                         // Replace 'your_remote_user' and 'your_remote_host' with your actual SSH user and VPS IP/hostname.
                         // 'StrictHostKeyChecking=no' is used for automation but consider its security implications.
                         sh """
-                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} your_remote_user@your_remote_host <<EOF
+                            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ssh root@72.60.111.65 <<EOF
                             cd /opt/chattingo
                             docker-compose pull
                             docker-compose up -d
