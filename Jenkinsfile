@@ -1,15 +1,9 @@
-def chattingoStages
-
 pipeline {
     agent any
+    libraries {
+        lib('shared-library')
+    }
     stages {
-        stage('Load Scripts') {
-            steps {
-                script {
-                    chattingoStages = load 'shared-library/vars/chattingoStages.groovy'
-                }
-            }
-        }
         stage('Git Clone') {
             steps {
                 script {
