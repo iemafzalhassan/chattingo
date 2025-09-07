@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: app-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass123   # root password (only for admin use)
+      MYSQL_DATABASE: chattingo_db       # auto-create DB
+      MYSQL_USER: chattingo_user         # new app user
+      MYSQL_PASSWORD: chattingo_pass     # password for app user
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"  # host:container
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "chattingo_user", "-pchattingo_pass"]
+      timeout: 20s
+      retries: 10
+
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: app-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/chattingo_db
+      SPRING_DATASOURCE_USERNAME: chattingo_user
+      SPRING_DATASOURCE_PASSWORD: chattingo_pass
+      JWT_SECRET: CYK0OfQIe4lumDKY1ZJp33AfvVOp7rR5UMFTeMgt4h5m3+eQIBd0mmRrYRxaZ8h3OiJpPke+kCGmqfD3BJFALg==
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://72.60.111.12:3000
+      CORS_ALLOWED_METHODS: GET,POST,PUT,DELETE,OPTIONS
+      CORS_ALLOWED_HEADERS: "*"
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: app-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+
