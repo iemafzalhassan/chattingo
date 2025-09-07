@@ -12,31 +12,31 @@ pipeline {
             }
         }
 
-        stage('Image Build') {
+        stage('Build Images') {
             steps {
                 script {
+                    // Backend image tags
+                    def backendTagBuild = "${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
+                    def backendTagLatest = "${env.DOCKERHUB_USERNAME}/chattingo-backend:latest"
+                    
                     echo "Building backend image..."
                     dir('backend') {
-                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER} ."
-                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo-backend:latest ."
+                        sh "docker build -t ${backendTagBuild} -t ${backendTagLatest} ."
                     }
 
+                    // Frontend image tags
+                    def frontendTagBuild = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
+                    def frontendTagLatest = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
+                    
                     echo "Building frontend image..."
                     dir('frontend') {
-                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER} ."
-                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest ."
+                        sh "docker build -t ${frontendTagBuild} -t ${frontendTagLatest} ."
                     }
                 }
             }
         }
 
-        stage('Filesystem Scan') {
-            steps {
-                echo "Yeh stage abhi baaki hai."
-            }
-        }
-
-        stage('Image Scan') {
+        stage('Scan Images') {
             steps {
                 script {
                     echo "Scanning backend image..."
@@ -48,7 +48,7 @@ pipeline {
             }
         }
 
-        stage('Push to Registry') {
+        stage('Push to Docker Hub') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKERHUB_USERNAME')]) {
@@ -56,14 +56,14 @@ pipeline {
                         sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin"
 
                         echo "Pushing backend images..."
-                        sh "docker push ${DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
-                        sh "docker push ${DOCKERHUB_USERNAME}/chattingo-backend:latest"
+                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
+                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-backend:latest"
 
                         echo "Pushing frontend images..."
-                        sh "docker push ${DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
-                        sh "docker push ${DOCKERHUB_USERNAME}/chattingo-frontend:latest"
+                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
+                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
 
-                        echo "Logging out from Docker Hub"
+                        echo "Logging out from Docker Hub..."
                         sh "docker logout"
                     }
                 }
