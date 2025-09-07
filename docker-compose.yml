@@ -20,10 +20,7 @@ services:
       retries: 5
 
   backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: chattingo-backend
+        image: ergaurav3155/chattingo-backend:${BUILD_NUMBER}    container_name: chattingo-backend
     ports:
       - "8080:8080"
     environment:
@@ -36,9 +33,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ergaurav3155/chattingo-frontend:${BUILD_NUMBER}
     container_name: chattingo-frontend
     ports:
       - "3000:80"
