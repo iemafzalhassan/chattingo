@@ -17,14 +17,14 @@ pipeline {
                 script {
                     echo "Building backend image..."
                     dir('backend') {
-                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER} ."
-                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo-backend:latest ."
+                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo:backend-${env.BUILD_NUMBER} ."
+                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo:backend-latest ."
                     }
 
                     echo "Building frontend image..."
                     dir('frontend') {
-                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER} ."
-                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest ."
+                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo:frontend-${env.BUILD_NUMBER} ."
+                        sh "docker build -t ${env.DOCKERHUB_USERNAME}/chattingo:frontend-latest ."
                     }
                 }
             }
@@ -45,20 +45,19 @@ pipeline {
         stage('Push to Registry') {
             steps {
                 script {
-                    // Docker Hub par securely login karein credentials plugin ka upyog karke
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         echo "Logging in to Docker Hub..."
                         sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
                         
-                        echo "Pushing backend image..."
-                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
-                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-backend:latest"
+                        echo "Pushing backend images..."
+                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo:backend-${env.BUILD_NUMBER}"
+                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo:backend-latest"
 
-                        echo "Pushing frontend image..."
-                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
-                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
+                        echo "Pushing frontend images..."
+                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo:frontend-${env.BUILD_NUMBER}"
+                        sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo:frontend-latest"
                         
-                        echo "Logout from Docker Hub (optional but good practice)"
+                        echo "Logout from Docker Hub"
                         sh "docker logout"
                     }
                 }
