@@ -12,7 +12,7 @@ pipeline {
             }
         }
 
-        stage('Image Build') {
+        stage('Build Docker Images') {
             steps {
                 script {
                     echo "Building backend image..."
@@ -33,7 +33,7 @@ pipeline {
         stage('Filesystem Scan') {
             steps {
                 script {
-                    // Assuming Trivy is installed on the Jenkins agent
+                    echo "Running Trivy filesystem scan..."
                     sh "trivy fs --exit-code 0 --severity HIGH,CRITICAL ."
                 }
             }
@@ -51,7 +51,7 @@ pipeline {
             }
         }
 
-        stage('Push to Registry') {
+        stage('Push to Docker Hub') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
@@ -73,13 +73,12 @@ pipeline {
             }
         }
 
-        stage('Update docker-compose with new image tags') {
+        stage('Update docker-compose') {
             steps {
                 script {
                     echo "Updating docker-compose.yml with new image tags..."
-                    // Replace the BUILD_NUMBER placeholder in docker-compose.yml with the current Jenkins BUILD_NUMBER
-                    def sedPattern = 's/\\$\\{BUILD_NUMBER\\\}/'
-                    sh "sed -i '${sedPattern}${env.BUILD_NUMBER}/g' docker-compose.yml"
+                    // Correctly escape BUILD_NUMBER placeholder for sed
+                    sh "sed -i 's/\\\${BUILD_NUMBER}/${env.BUILD_NUMBER}/g' docker-compose.yml"
                     echo "docker-compose.yml updated with build number ${env.BUILD_NUMBER}"
                 }
             }
@@ -87,7 +86,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                echo "Yeh stage abhi baaki hai."
+                echo "Deployment stage abhi baki hai."
             }
         }
     }
