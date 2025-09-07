@@ -7,10 +7,10 @@ services:
     container_name: app-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass123   # root password (only for admin use)
+      MYSQL_ROOT_PASSWORD: cm9vdHBhc3MxMjM=   # root password (only for admin use)
       MYSQL_DATABASE: chattingo_db       # auto-create DB
       MYSQL_USER: chattingo_user         # new app user
-      MYSQL_PASSWORD: chattingo_pass     # password for app user
+      MYSQL_PASSWORD: Y2hhdHRpbmdvX3Bhc3M=     # password for app user
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
@@ -27,7 +27,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: app-backend
+    container_name: chattingo-backend
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: docker
