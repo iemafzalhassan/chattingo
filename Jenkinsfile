@@ -16,22 +16,18 @@ pipeline {
             steps {
                 script {
                     // Backend image tags
-                    def backendTagBuild = "${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
+                    def backendTag = "${env.DOCKERHUB_USERNAME}/chattingo-backend:${env.BUILD_NUMBER}"
                     def backendTagLatest = "${env.DOCKERHUB_USERNAME}/chattingo-backend:latest"
                     
                     echo "Building backend image..."
-                    dir('backend') {
-                        sh "docker build -t ${backendTagBuild} -t ${backendTagLatest} ."
-                    }
+                    sh "docker build -t ${backendTag} -t ${backendTagLatest} ./backend"
 
                     // Frontend image tags
-                    def frontendTagBuild = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
+                    def frontendTag = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
                     def frontendTagLatest = "${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
                     
                     echo "Building frontend image..."
-                    dir('frontend') {
-                        sh "docker build -t ${frontendTagBuild} -t ${frontendTagLatest} ."
-                    }
+                    sh "docker build -t ${frontendTag} -t ${frontendTagLatest} ./frontend"
                 }
             }
         }
