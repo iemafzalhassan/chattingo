@@ -91,8 +91,8 @@ pipeline {
                     withCredentials([sshUserPrivateKey(credentialsId: 'ssh-pass', keyFileVariable: 'SSH_KEY')]) {
                         // Replace 'your_remote_user' and 'your_remote_host' with your actual SSH user and VPS IP/hostname.
                         // 'StrictHostKeyChecking=no' is used for automation but consider its security implications.
-                        sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.yml root@72.60.111.65:/opt/chattingo/"
-                        sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} root@72.60.111.65 \"cd /opt/chattingo && docker-compose pull && docker-compose up -d\"" 
+                        sh 'cp -f docker-compose.yml /opt/chattingo/'
+                        sh 'docker compose -f /opt/chattingo/docker-compose.yml up -d --remove-orphans' 
                     }
                     echo "Deployment complete."
                 }
