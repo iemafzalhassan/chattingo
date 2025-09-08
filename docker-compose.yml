@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   db:
@@ -20,7 +20,8 @@ services:
       retries: 5
 
   backend:
-        image: ergaurav3155/chattingo-backend:${BUILD_NUMBER}    container_name: chattingo-backend
+    image: ergaurav3155/chattingo-backend:${BUILD_NUMBER:-latest}
+    container_name: chattingo-backend
     ports:
       - "8080:8080"
     environment:
@@ -33,7 +34,7 @@ services:
         condition: service_healthy
 
   frontend:
-    image: ergaurav3155/chattingo-frontend:${BUILD_NUMBER}
+    image: ergaurav3155/chattingo-frontend:${BUILD_NUMBER:-latest}
     container_name: chattingo-frontend
     ports:
       - "3000:80"
