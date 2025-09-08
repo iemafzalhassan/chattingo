@@ -45,7 +45,12 @@ function HomePage() {
 
   // Function to establish a WebSocket connection
   const connect = () => {
-    if (!token) return; // don't attempt without auth
+    if (!token) {
+      console.log("No token available, skipping WebSocket connection");
+      return; // don't attempt without auth
+    }
+    
+    console.log("Attempting to connect to WebSocket...");
     
     const client = new Client({
       webSocketFactory: () => new SockJs(`${BASE_API_URL}/ws`),
@@ -53,8 +58,18 @@ function HomePage() {
         Authorization: `Bearer ${token}`,
         "X-XSRF-TOKEN": getCookie("XSRF-TOKEN"),
       },
+      reconnectDelay: 10000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
       onConnect: onConnect,
       onStompError: onError,
+      onWebSocketError: (error) => {
+        console.error("WebSocket error:", error);
+      },
+      onWebSocketClose: () => {
+        console.log("WebSocket connection closed");
+        setIsConnected(false);
+      },
       debug: (str) => {
         console.log('STOMP: ' + str);
       },
@@ -75,11 +90,13 @@ function HomePage() {
 
   // Callback for WebSocket connection error
   const onError = (error) => {
-    console.log("on error ", error);
+    console.error("STOMP connection error:", error);
+    setIsConnected(false);
   };
 
   // Callback for successful WebSocket connection
   const onConnect = () => {
+    console.log("WebSocket connected successfully");
     setIsConnected(true);
 
     // Subscribe to the current chat messages based on the chat type
@@ -100,16 +117,46 @@ function HomePage() {
     setMessages((prevMessages) => [...prevMessages, receivedMessage]);
   };
 
+  // Helper function to safely send messages via WebSocket
+  const sendMessageViaWebSocket = (messageData) => {
+    if (!stompClient) {
+      console.warn("STOMP client not available");
+      return false;
+    }
+    
+    if (!stompClient.connected) {
+      console.warn("STOMP client not connected");
+      return false;
+    }
+    
+    if (typeof stompClient.send !== 'function') {
+      console.warn("STOMP client send method not available");
+      return false;
+    }
+    
+    try {
+      stompClient.send("/app/message", {}, JSON.stringify(messageData));
+      console.log("Message sent via WebSocket:", messageData);
+      return true;
+    } catch (error) {
+      console.error("Error sending message via WebSocket:", error);
+      return false;
+    }
+  };
+
   // Effect to establish a WebSocket connection
   useEffect(() => {
     connect();
     return () => {
       try {
-        if (stompClient && isConnected) {
+        if (stompClient) {
+          console.log("Cleaning up WebSocket connection...");
           stompClient.deactivate();
           setIsConnected(false);
         }
-      } catch (e) { }
+      } catch (e) {
+        console.error("Error during WebSocket cleanup:", e);
+      }
     };
   }, []);
 
@@ -128,11 +175,19 @@ function HomePage() {
 
   // Effect to handle sending a new message via WebSocket
   useEffect(() => {
-    if (message.newMessage && isConnected && stompClient && currentChat?.id) {
-      stompClient.send("/app/message", {}, JSON.stringify(message.newMessage));
-      setMessages((prevMessages) => [...prevMessages, message.newMessage]);
+    if (message.newMessage && isConnected && currentChat?.id) {
+      const messageSent = sendMessageViaWebSocket(message.newMessage);
+      
+      if (messageSent) {
+        // Message sent successfully via WebSocket
+        setMessages((prevMessages) => [...prevMessages, message.newMessage]);
+      } else {
+        // Fallback: just add the message to local state
+        console.log("Adding message to local state as fallback");
+        setMessages((prevMessages) => [...prevMessages, message.newMessage]);
+      }
     }
-  }, [message.newMessage, isConnected, stompClient, currentChat]);
+  }, [message.newMessage, isConnected, currentChat]);
 
   // Effect to set the messages state from the store
   useEffect(() => {
@@ -232,11 +287,14 @@ function HomePage() {
   // Function to handle user logout
   const handleLogout = () => {
     try {
-      if (stompClient && isConnected) {
+      if (stompClient) {
+        console.log("Disconnecting WebSocket during logout...");
         stompClient.deactivate();
         setIsConnected(false);
       }
-    } catch (e) { }
+    } catch (e) {
+      console.error("Error during logout WebSocket cleanup:", e);
+    }
     dispatch(logoutAction());
     navigate("/signin");
   };

@@ -50,7 +50,7 @@ public class AppConfig {
                         // Parse allowed origins from environment variable
                         String[] origins = allowedOrigins.split(",");
                         cfg.setAllowedOrigins(Arrays.asList(origins));
-                        cfg.setAllowedOriginPatterns(Arrays.asList(origins));
+                        cfg.setAllowedOriginPatterns(Arrays.asList("*"));
 
                         // Parse allowed methods from environment variable
                         String[] methods = allowedMethods.split(",");

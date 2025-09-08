@@ -69,6 +69,16 @@
 				spring-boot-starter-web
 			</artifactId>
 		</dependency>
+		<!-- Temporarily disabled due to Docker compatibility issues
+		<dependency>
+			<groupId>
+				org.springframework.boot
+			</groupId>
+			<artifactId>
+				spring-boot-starter-actuator
+			</artifactId>
+		</dependency>
+		-->
 		<dependency>
 			<groupId>
 				org.springframework.boot
@@ -168,6 +178,18 @@
 			<artifactId>
 				spring-boot-starter-websocket
 			</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.github.cdimascio/dotenv-java -->
+		<dependency>
+			<groupId>
+				io.github.cdimascio
+			</groupId>
+			<artifactId>
+				dotenv-java
+			</artifactId>
+			<version>
+				3.0.0
+			</version>
 		</dependency>
 	</dependencies>
 		<build>
