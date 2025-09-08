@@ -65,9 +65,6 @@ pipeline {
                         echo "Pushing frontend images..."
                         sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:${env.BUILD_NUMBER}"
                         sh "docker push ${env.DOCKERHUB_USERNAME}/chattingo-frontend:latest"
-
-                        echo "Logging out from Docker Hub"
-                        sh "docker logout"
                     }
                 }
             }
