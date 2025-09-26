@@ -3,6 +3,7 @@ services:
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile 
     container_name: frontend
     env_file:
       - ./frontend/.env
@@ -44,7 +45,8 @@ services:
 
   finaltesting:
     build:
-      context: .
+      context: ./backend
+      dockerfile: Dockerfile 
     container_name: finaltesting
     env_file:
       - ./backend/.env
