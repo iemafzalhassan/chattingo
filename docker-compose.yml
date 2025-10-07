@@ -1,0 +1,63 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: chattingo_db
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=chattingo_db
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - chattingo_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chattingo_backend
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override DB host to Docker service 'db' for in-container connection
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/chattingo_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=
+      # Ensure CORS allows proxy origin on port 80 for WS handshake
+      - CORS_ALLOWED_ORIGINS=http://localhost,http://127.0.0.1,http://localhost:3000,http://127.0.0.1:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - chattingo_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: "/api"
+        REACT_APP_WS_URL: "/ws"
+        REACT_APP_ENV: "production"
+        REACT_APP_DEBUG: "false"
+    container_name: chattingo_frontend
+    depends_on:
+      - backend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - chattingo_net
+
+volumes:
+  db_data:
+
+networks:
+  chattingo_net:
+    driver: bridge
