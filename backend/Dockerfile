@@ -12,6 +12,5 @@ RUN mvn -q -e -B -DskipTests package
 FROM eclipse-temurin:17-jre AS runtime
 WORKDIR /app
 COPY --from=build /app/target/*.jar /app/app.jar
-ENV JAVA_OPTS="-Xms256m -Xmx512m"
 EXPOSE 8080
 ENTRYPOINT ["/bin/sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
