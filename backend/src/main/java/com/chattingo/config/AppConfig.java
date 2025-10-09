@@ -3,7 +3,7 @@ package com.chattingo.config;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.springframework.beans.factory.annotation.Value;
+import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -23,12 +23,6 @@ public class AppConfig {
 
     private final JwtValidator jwtValidator;
 
-    @Value("${cors.allowed.origins:http://localhost:3000,http://localhost}")
-    private String allowedOrigins;
-
-    @Value("${cors.allowed.methods:GET,POST,PUT,DELETE,OPTIONS}")
-    private String allowedMethods;
-
     public AppConfig(JwtValidator jwtValidator) {
         this.jwtValidator = jwtValidator;
     }
@@ -45,6 +39,14 @@ public class AppConfig {
                     @SuppressWarnings("null")
                     @Override
                     public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                        Dotenv dotenv = Dotenv.configure()
+                                .directory(".")
+                                .ignoreIfMissing()
+                                .load();
+
+                        String allowedOrigins = dotenv.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost");
+                        String allowedMethods = dotenv.get("CORS_ALLOWED_METHODS", "GET,POST,PUT,DELETE,OPTIONS");
+
                         CorsConfiguration cfg = new CorsConfiguration();
 
                         // Parse allowed origins from environment variable
