@@ -1,6 +1,6 @@
 package com.chattingo.config;
 
-import org.springframework.beans.factory.annotation.Value;
+import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -11,12 +11,16 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${cors.allowed.origins:http://localhost:3000,http://localhost}")
-    private String allowedOrigins;
-
     @SuppressWarnings("null")
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        Dotenv dotenv = Dotenv.configure()
+                .directory(".")
+                .ignoreIfMissing()
+                .load();
+
+        String allowedOrigins = dotenv.get("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost");
+        
         // Parse allowed origins from environment variable
         String[] origins = allowedOrigins.split(",");
         registry.addEndpoint("/ws").setAllowedOrigins(origins).withSockJS();
