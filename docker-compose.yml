@@ -1,0 +1,96 @@
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile 
+    container_name: frontend
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "80:80"
+    depends_on:
+      - finaltesting
+    networks:
+      - threetier
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 5s
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql  
+    env_file:
+      - ./backend/.env
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    networks:
+      - threetier
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      retries: 5
+      start_period: 60s
+      timeout: 5s
+
+
+  finaltesting:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile 
+    container_name: finaltesting
+    env_file:
+      - ./backend/.env
+    environment:
+      #JWT CONFI
+      JWT_SECRET: ${JWT_SECRET}
+      # DATABASE CONFI
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+
+      # CORS CONFI REUIRED FOR FRONTEND COMMUINCATION
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      CORS_ALLOWED_METHODS: ${CORS_ALLOWED_METHODS}
+      CORS_ALLOWED_HEADERS: ${CORS_ALLOWED_HEADERS}
+
+      # APPLICATION CONFI
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+      SERVER_PORT: ${SERVER_PORT}
+
+      # WebSocket Configuration
+      WEBSOCKET_ENDPOINT: ${WEBSOCKET_ENDPOINT}
+
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: always
+    networks:
+      - threetier
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 10s
+      retries: 5
+      start_period: 60s
+      timeout: 5s
+
+volumes:
+  mysql_data:
+
+networks:
+  threetier:
+    driver: bridge
+
